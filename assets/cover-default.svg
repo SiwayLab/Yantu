@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="蓝色抽象演示封面背景">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#176ba8"/>
+      <stop offset="0.46" stop-color="#123f82"/>
+      <stop offset="1" stop-color="#091f50"/>
+    </linearGradient>
+    <radialGradient id="glow-left" cx="0.08" cy="0.08" r="0.62">
+      <stop offset="0" stop-color="#73d7ff" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#73d7ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-right" cx="0.92" cy="0.88" r="0.58">
+      <stop offset="0" stop-color="#657cff" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#657cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8ee4ff" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#8ee4ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#base)"/>
+  <rect width="1920" height="1080" fill="url(#glow-left)"/>
+  <rect width="1920" height="1080" fill="url(#glow-right)"/>
+  <circle cx="-45" cy="-80" r="430" fill="none" stroke="#b7efff" stroke-opacity="0.18" stroke-width="2"/>
+  <circle cx="-45" cy="-80" r="535" fill="none" stroke="#b7efff" stroke-opacity="0.08" stroke-width="86"/>
+  <circle cx="1880" cy="1090" r="365" fill="none" stroke="#b7d1ff" stroke-opacity="0.18" stroke-width="2"/>
+  <circle cx="1880" cy="1090" r="470" fill="none" stroke="#819cff" stroke-opacity="0.07" stroke-width="92"/>
+  <path d="M-120 730 C390 585 690 650 1030 510 C1370 370 1580 220 2040 250" fill="none" stroke="url(#ribbon)" stroke-width="90" opacity="0.3"/>
+  <path d="M-120 760 C380 620 710 690 1050 545 C1390 400 1600 250 2040 285" fill="none" stroke="#d7f5ff" stroke-width="1.5" opacity="0.14"/>
+</svg>

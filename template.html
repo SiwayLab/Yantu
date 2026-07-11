@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    {custom_styles}
+    <style>
+        /* --- 字体与基础重置 (离线版) --- */
+        @font-face { 
+            font-family: 'iconfont'; 
+            src: url('./icons/iconfont.woff2') format('woff2'), 
+                 url('./icons/iconfont.woff') format('woff'), 
+                 url('./icons/iconfont.ttf') format('truetype'); 
+        }
+        .iconfont { font-family: "iconfont" !important; font-size: 20px; font-style: normal; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; background-color: var(--bg-color, #f4f7f9); background-image: var(--bg-image); background-size: var(--bg-size, auto); background-repeat: var(--bg-repeat, repeat); background-position: center; }
+
+        /* --- 演示封面 --- */
+        #mindmap-cover {
+            position: fixed; inset: 0; z-index: 3000; box-sizing: border-box;
+            display: grid; place-items: center; padding: clamp(28px, 6vw, 96px);
+            overflow: hidden; color: var(--cover-text-color, #fff); text-align: center; cursor: pointer;
+            background-color: #0b3470;
+            background-image:
+                linear-gradient(var(--cover-overlay, rgba(8, 26, 58, 0.42)), var(--cover-overlay, rgba(8, 26, 58, 0.42))),
+                var(--cover-bg-image, radial-gradient(circle at 18% 18%, rgba(87, 199, 255, 0.72), transparent 34%), radial-gradient(circle at 82% 76%, rgba(71, 101, 255, 0.52), transparent 38%), linear-gradient(135deg, #0d5ca8 0%, #123979 48%, #071d45 100%));
+            background-position: center; background-size: cover; background-repeat: no-repeat;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity 0.42s ease, visibility 0.42s ease;
+        }
+        #mindmap-cover::before, #mindmap-cover::after { content: ""; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.16); pointer-events: none; }
+        #mindmap-cover::before { width: min(62vw, 760px); aspect-ratio: 1; left: -24vw; top: -36vw; box-shadow: 0 0 0 80px rgba(255,255,255,0.025), 0 0 0 160px rgba(255,255,255,0.018); }
+        #mindmap-cover::after { width: min(44vw, 520px); aspect-ratio: 1; right: -17vw; bottom: -28vw; box-shadow: 0 0 0 72px rgba(255,255,255,0.025); }
+        #mindmap-cover.is-visible { opacity: 1; visibility: visible; pointer-events: auto; }
+        #mindmap-cover:focus { outline: none; }
+        .cover-content { position: relative; z-index: 2; width: min(1500px, 90vw); pointer-events: none; user-select: none; transform: translateY(18px); opacity: 0; transition: transform 0.55s ease 0.08s, opacity 0.55s ease 0.08s; }
+        #mindmap-cover.is-visible .cover-content { transform: translateY(0); opacity: 1; }
+        .cover-heading { width: 100%; }
+        .cover-title { margin: 0 auto; max-width: 100%; line-height: 1.15; letter-spacing: 0.025em; font-weight: 760; white-space: nowrap; text-shadow: 0 8px 32px rgba(0,0,0,0.24); }
+        .cover-title-short { font-size: clamp(3rem, 6.8vw, 6.4rem); }
+        .cover-title-medium { font-size: clamp(2.5rem, 5.3vw, 5.2rem); }
+        .cover-title-long { font-size: clamp(2rem, 4vw, 4rem); }
+        .cover-title-extra-long { max-width: 1200px; font-size: clamp(1.75rem, 3.3vw, 3.2rem); white-space: normal; text-wrap: balance; }
+        .cover-subtitle { margin: clamp(14px, 2.2vh, 24px) auto 0; max-width: 96%; font-size: clamp(2rem, 4.2vw, 4.1rem); line-height: 1.25; font-weight: 620; letter-spacing: 0.025em; white-space: nowrap; opacity: 0.96; text-shadow: 0 6px 24px rgba(0,0,0,0.22); }
+        .cover-separator { width: clamp(72px, 9vw, 132px); height: 4px; margin: clamp(26px, 4vh, 44px) auto clamp(22px, 3vh, 34px); border-radius: 999px; background: var(--cover-accent-color, #8ed7ff); box-shadow: 0 0 24px color-mix(in srgb, var(--cover-accent-color, #8ed7ff) 70%, transparent); }
+        .cover-metadata { display: grid; justify-items: center; gap: 8px; font-size: clamp(1rem, 1.65vw, 1.35rem); line-height: 1.55; letter-spacing: 0.06em; }
+        .cover-metadata p { margin: 0; }
+        .cover-presenter { font-weight: 650; }
+        .cover-organization, .cover-date { opacity: 0.82; }
+        .cover-logo { position: absolute; z-index: 3; width: auto; height: auto; max-width: var(--cover-logo-size, 96px); max-height: var(--cover-logo-size, 96px); object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.2)); }
+        .cover-logo-top-left { top: var(--cover-logo-margin, 32px); left: var(--cover-logo-margin, 32px); }
+        .cover-logo-top-right { top: var(--cover-logo-margin, 32px); right: var(--cover-logo-margin, 32px); }
+        .cover-logo-bottom-left { bottom: var(--cover-logo-margin, 32px); left: var(--cover-logo-margin, 32px); }
+        .cover-logo-bottom-right { right: var(--cover-logo-margin, 32px); bottom: var(--cover-logo-margin, 32px); }
+        @media (max-width: 900px) { .cover-title, .cover-subtitle { white-space: normal; text-wrap: balance; } }
+        @media (max-width: 640px) { .cover-logo { max-width: min(var(--cover-logo-size, 96px), 18vw); max-height: min(var(--cover-logo-size, 96px), 18vw); } }
+        @media (prefers-reduced-motion: reduce) { #mindmap-cover, .cover-content { transition: none !important; } }
+        
+        /* --- 工具栏 --- */
+        #mindmap-toolbar { position: fixed; top: 20px; right: 20px; z-index: 1001; display: flex; gap: 10px; transition: top 0.3s ease, bottom 0.3s ease; }
+        #mindmap-toolbar button { background-color: white; border: 1px solid #dcdfe6; border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s ease; color: #606266; opacity: 0.7; }
+        #mindmap-toolbar button:hover { border-color: #4a90e2; color: #4a90e2; transform: translateY(-1px); opacity: 1; }
+        #mindmap-toolbar button[aria-pressed="true"] { background-color: white; border-color: #409eff; color: #409eff; opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        #mindmap-toolbar button[aria-pressed="true"]:hover { background-color: white; border-color: #337ecc; color: #337ecc; }
+        
+        /* --- 视口与容器 (核心布局) --- */
+        #mindmap-viewport { position: absolute; inset: 0; overflow: auto; scroll-behavior: smooth; }
+        #mindmap-viewport:focus { outline: none; }
+        /* 全屏模式下禁止滚动，由 JS 接管定位 */
+        #mindmap-viewport.fit-mode-active { overflow: hidden !important; scroll-behavior: auto; }
+        
+        .mindmap-container { 
+            position: relative; 
+            /* [修复] 使用 inline-flex + flex-start 防止深层节点展开时导致整体左移 */
+            display: inline-flex; justify-content: flex-start; align-items: center; 
+            
+            /* [核心修复] 
+               使用 50vh/50vw 的 Padding 确保任何边缘节点周围都有半个屏幕的缓冲空间。
+               配合 JS 的动态扩容，保证任何深度的节点都能被滚动到屏幕正中央。
+            */
+            padding: 50vh 50vw; 
+            box-sizing: content-box; 
+            
+            min-width: 100%; min-height: 100%; 
+            /* 默认中心点，JS 会在缩放时动态修改它 */
+            transform-origin: center center; 
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+        }
+        
+        /* --- SVG 连接线 --- */
+        #mindmap-lines-svg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+        .mindmap-connector { stroke: var(--connector-color, #a2b9d6); stroke-width: 2px; vector-effect: non-scaling-stroke; transition: none; fill: none; }
+        
+        /* --- 树形结构与间距控制 --- */
+        .mindmap, .mindmap ul { list-style: none; padding: 0; margin: 0; position: relative; }
+        .mindmap { display: flex; align-items: center; justify-content: center; } 
+        .mindmap li { display: flex; align-items: center; margin: 20px 0; position: relative; }
+        
+        /* 关键：使用 CSS 变量控制层级间距，允许 JS 动态拉伸 */
+        .mindmap ul { 
+            margin-left: var(--branch-spacing, 80px); 
+            transition: margin-left 0.3s ease-in-out, opacity 0.3s ease-in-out; 
+        }
+        
+        /* --- 关键修复：全局强制禁止过渡类 --- */
+        /* 当此 active 时，容器内所有相关元素的动画都被强制关闭，防止连线错位 */
+        .app-no-transition, .app-no-transition * { transition: none !important; scroll-behavior: auto !important; }
+        
+        /* --- 节点样式 --- */
+        .node-content { position: relative; z-index: 1; display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 140px; transition: all 0.3s ease, opacity 0.4s ease, filter 0.4s ease; cursor: pointer; flex-shrink: 0; text-align: left; background: #fff; vertical-align: middle; }
+        
+        .node-content:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .node-root > .node-content { background-color: var(--node-root-bg, #4a90e2); color: var(--node-root-text, white); border: 1px solid var(--node-root-border, #357abd); font-size: 1.2em; font-weight: bold; }
+        .node-level-1 > .node-content { background-color: var(--node-level1-bg, #e8f0fe); color: var(--node-level1-text, #333); border: 1px solid var(--node-level1-border, #a2b9d6); font-weight: bold; }
+        .node-level-2 > .node-content { background-color: var(--node-level2-bg, #e2e8f0); color: var(--node-level2-text, #333); border: 1px solid var(--node-level2-border, #b8c6d9); font-weight: 500; }
+        .node-level-3 > .node-content { background-color: var(--node-level3-bg, #f8f9fa); color: var(--node-level3-text, #333); border: 1px solid var(--node-level3-border, #e0e8f0); }
+        .node-label { display: inline-block; min-width: 0; line-height: 1.4; }
+        .node-leaf > .node-content { max-width: 600px; white-space: normal; }
+        .node-leaf p { margin: 0; line-height: 1.6; }
+
+        /* --- 图片样式 --- */
+        .node-content img {
+            max-width: 300px; /* 限制最大宽度 */
+            max-height: 300px;
+            border-radius: 4px;
+            margin: 5px 0;
+            display: block; /* 独占一行 */
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+        .node-content img:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- 图片全屏预览 --- */
+        #image-lightbox {
+            position: fixed; inset: 0; z-index: 4000; box-sizing: border-box;
+            display: grid; place-items: center; padding: 24px;
+            background: rgba(4, 12, 28, 0.92); cursor: zoom-out;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+        }
+        #image-lightbox.is-visible { opacity: 1; visibility: visible; pointer-events: auto; }
+        #image-lightbox:focus { outline: none; }
+        #image-lightbox img {
+            display: block; width: auto; height: auto;
+            max-width: calc(100vw - 48px); max-height: calc(100vh - 48px);
+            object-fit: contain; border-radius: 8px; cursor: zoom-out;
+            user-select: none; box-shadow: 0 18px 60px rgba(0,0,0,0.45);
+        }
+        @media (prefers-reduced-motion: reduce) { #image-lightbox { transition: none !important; } }
+        
+        /* --- 交互效果 --- */
+        .mindmap-container.has-focus:not(.blur-disabled) .node-content:not(.focused) { opacity: 0.3; filter: blur(2px); }
+        .mindmap-container.has-focus:not(.blur-disabled) .node-content:not(.focused):hover { opacity: 1; filter: blur(0); }
+        .mindmap-container.blur-disabled .node-content { opacity: 1 !important; filter: none !important; }
+        .node-content.focused { border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.5), 0 6px 12px rgba(0,0,0,0.15); transform: translateY(-2px); opacity: 1; filter: blur(0); }
+        .node-content.final-focus { transform: translateY(-2px) scale(1.02); }
+        
+        /* --- 图标按钮 --- */
+        .toggle-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; line-height: 1; padding: 0; margin-right: 8px; color: #4a90e2; border: 0; border-radius: 4px; background-color: rgba(255,255,255,0.5); cursor: pointer; flex: 0 0 20px; align-self: center; }
+        .toggle-icon::before, .toggle-icon::after { content: ""; position: absolute; left: 50%; top: 50%; width: 11px; height: 3px; border-radius: 999px; background: currentColor; transform: translate(-50%, -50%); pointer-events: none; }
+        .toggle-icon::after { width: 3px; height: 11px; }
+        .node-root .toggle-icon { color: #4a90e2; background-color: white; }
+        .collapsible:not(.collapsed) > .node-content > .toggle-icon::after { display: none; }
+        .collapsible.collapsed > ul { display: none; }
+        .child-clarity-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; line-height: 1; margin-left: 6px; padding: 0; border: 0; background: transparent; color: currentColor; opacity: 0.15; font-size: 16px; transition: all 0.2s ease; cursor: pointer; flex: 0 0 20px; align-self: center; }
+        .child-clarity-btn:not(:disabled):hover { opacity: 1; transform: scale(1.1); color: #4a90e2; }
+        .child-clarity-btn:disabled { opacity: 0.06; cursor: not-allowed; transform: none; }
+        .node-root .child-clarity-btn:not(:disabled):hover { color: white; text-shadow: 0 0 5px rgba(255,255,255,0.6); }
+        .collapsible.keep-children-clear > .node-content .child-clarity-btn { opacity: 1; color: #4a90e2; }
+        .node-root.keep-children-clear > .node-content .child-clarity-btn { color: white; opacity: 0.9; }
+        .keep-children-clear > ul > li > .node-content { filter: none !important; opacity: 1 !important; transition: filter 0.3s ease, opacity 0.3s ease; }
+        .image-missing { display: inline-block; color: #b42318; background: #fef3f2; border: 1px dashed #fda29b; border-radius: 4px; padding: 4px 6px; }
+    </style>
+</head>
+<body>
+    {cover_html}
+    <div id="mindmap-toolbar">
+        <button type="button" id="center-root-btn" tabindex="-1" title="聚焦主节点" aria-label="聚焦主节点"><i class="iconfont" aria-hidden="true">&#xe62c;</i></button>
+        <button type="button" id="toggle-blur-btn" tabindex="-1" title="关闭节点模糊效果" aria-label="关闭节点模糊效果" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe62d;</i></button>
+        <button type="button" id="fit-view-btn" tabindex="-1" title="缩放至全屏；聚焦最深叶子时双击可将其纳入折叠" aria-label="缩放至全屏；聚焦最深叶子时双击可将其纳入折叠" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe618;</i></button>
+    </div>
+    {logo_html}
+    <div id="image-lightbox" role="dialog" aria-modal="true" aria-label="图片全屏预览" aria-hidden="true" tabindex="-1">
+        <img id="image-lightbox-content" alt="">
+    </div>
+    <div id="mindmap-viewport" tabindex="-1">
+        <div class="mindmap-container">
+            <svg id="mindmap-lines-svg"></svg>
+            <ul class="mindmap">{content}</ul>
+        </div>
+    </div>
+<script>
+    // 1. 贝塞尔曲线绘制函数
+    function drawMindmapConnectors(svgElement, connections, options) { if (!svgElement || svgElement.namespaceURI !== 'http://www.w3.org/2000/svg' || svgElement.localName !== 'svg') { throw new Error('drawMindmapConnectors: svgElement must be an <svg> element'); } if (!Array.isArray(connections)) { return; } const { curvature = 0.5, className = 'mindmap-connector', clear = true, } = options || {}; const c = Math.max(0, Math.min(1, curvature)); if (clear) { svgElement.querySelectorAll('path[data-mindmap-connector="true"]').forEach((p) => p.remove()); } const SVG_NS = 'http://www.w3.org/2000/svg'; connections.forEach((conn) => { const src = conn && conn.source; const tgt = conn && conn.target; if (!src || !tgt) return; const sx = src.x + (src.width || 0); const sy = src.y + (src.height || 0) / 2; const tx = tgt.x; const ty = tgt.y + (tgt.height || 0) / 2; const dx  = tx - sx; const c1x = sx + dx * c; const c2x = tx - dx * c; const d = ['M', sx, sy, 'C', c1x, sy, c2x, ty, tx, ty].join(' '); const path = document.createElementNS(SVG_NS, 'path'); path.setAttribute('d', d); path.setAttribute('fill', 'none'); path.setAttribute('data-mindmap-connector', 'true'); if (className) path.setAttribute('class', className); const stroke = typeof conn.stroke === 'string' ? conn.stroke : undefined; const strokeWidth = typeof conn.strokeWidth === 'number' ? conn.strokeWidth : undefined; if (stroke) path.setAttribute('stroke', stroke); if (strokeWidth) path.setAttribute('stroke-width', String(strokeWidth)); svgElement.appendChild(path); }); }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM 元素引用
+        const viewport  = document.getElementById('mindmap-viewport');
+        const container = document.querySelector('.mindmap-container');
+        const svg       = document.getElementById('mindmap-lines-svg');
+        const toggleBlurBtn = document.getElementById('toggle-blur-btn');
+        const centerRootBtn = document.getElementById('center-root-btn');
+        const fitViewBtn    = document.getElementById('fit-view-btn');
+        const cover         = document.getElementById('mindmap-cover');
+        const imageLightbox = document.getElementById('image-lightbox');
+        const imageLightboxContent = document.getElementById('image-lightbox-content');
+        const toolbar        = document.getElementById('mindmap-toolbar');
+        
+        // 状态管理
+        let lastFocusedNode = null;
+        let redrawQueued    = false;
+        let isFitMode       = false;
+        let fitModeCanUpgradeWithDouble = false;
+        let centerRootClickTimer = null;
+        let fitViewClickTimer = null;
+        let imagePreviewClearTimer = null;
+        let presentationPreviewedNode = null;
+        const autoCollapsedForFit = new Set();
+
+        // 2. 收集连接点坐标
+        function collectConnections() { const connections = []; const containerRect = container.getBoundingClientRect(); const scaleX = container.offsetWidth ? containerRect.width / container.offsetWidth : 1; const scaleY = container.offsetHeight ? containerRect.height / container.offsetHeight : 1; const safeScaleX = Number.isFinite(scaleX) && scaleX > 0 ? scaleX : 1; const safeScaleY = Number.isFinite(scaleY) && scaleY > 0 ? scaleY : 1; const parents = container.querySelectorAll('li.collapsible:not(.collapsed)'); parents.forEach(parentLi => { const parentContent = parentLi.querySelector(':scope > .node-content'); if (!parentContent || parentContent.offsetParent === null) return; const pRect = parentContent.getBoundingClientRect(); const parentCoords = { x: (pRect.left - containerRect.left) / safeScaleX, y: (pRect.top - containerRect.top) / safeScaleY, width: pRect.width / safeScaleX, height: pRect.height / safeScaleY }; const children = parentLi.querySelectorAll(':scope > ul > li'); children.forEach(childLi => { const childContent = childLi.querySelector(':scope > .node-content'); if (!childContent || childContent.offsetParent === null) return; const cRect = childContent.getBoundingClientRect(); const childCoords = { x: (cRect.left - containerRect.left) / safeScaleX, y: (cRect.top - containerRect.top) / safeScaleY, width: cRect.width / safeScaleX, height: cRect.height / safeScaleY }; connections.push({ source: parentCoords, target: childCoords }); }); }); return connections; }
+        
+        // 3. 重绘逻辑
+        function redrawNow() { 
+            if (!svg) return; 
+            const w = container.scrollWidth;
+            const h = container.scrollHeight;
+            svg.setAttribute('width',  w); 
+            svg.setAttribute('height', h); 
+            const connections = collectConnections(); 
+            drawMindmapConnectors(svg, connections); 
+        }
+
+        function requestRedraw() { if (redrawQueued) return; redrawQueued = true; requestAnimationFrame(() => { redrawQueued = false; redrawNow(); }); }
+        
+        // 4. 节点居中逻辑 (终极修复：动态扩容无限画布)
+        function centerNodeInViewport(liElement, smooth) { 
+            if (!liElement || isFitMode) return;
+            const nodeContent = liElement.querySelector(':scope > .node-content') || liElement; 
+            
+            // 1. 计算目标位置
+            const nodeRect = nodeContent.getBoundingClientRect(); 
+            const vpRect   = viewport.getBoundingClientRect(); 
+            
+            // 节点当前中心点（相对于视口）
+            const nodeCenterX = nodeRect.left + nodeRect.width  / 2;
+            const nodeCenterY = nodeRect.top  + nodeRect.height / 2; 
+            
+            // 视口中心点
+            const vpCenterX   = vpRect.left + vpRect.width  / 2;
+            const vpCenterY   = vpRect.top  + vpRect.height / 2; 
+            
+            // 需要移动的距离
+            const deltaX = nodeCenterX - vpCenterX;
+            const deltaY = nodeCenterY - vpCenterY; 
+            
+            // 目标 ScrollLeft/Top
+            let targetLeft = viewport.scrollLeft + deltaX;
+            let targetTop  = viewport.scrollTop  + deltaY; 
+            
+            // 2. [核心修复] 动态扩容检测
+            // 检查目标位置是否超出了当前的 scrollWidth/Height
+            const currentScrollWidth = container.scrollWidth;
+            const currentScrollHeight = container.scrollHeight;
+            const vpW = viewport.clientWidth;
+            const vpH = viewport.clientHeight;
+
+            // 计算如果滚动到 targetLeft，视口右边缘会到哪里
+            const requiredWidth = targetLeft + vpW;
+            const requiredHeight = targetTop + vpH;
+
+            let needsResize = false;
+
+            // 如果需要的宽度 > 当前滚动宽度，增加 padding-right
+            if (requiredWidth > currentScrollWidth) {
+                const extraW = requiredWidth - currentScrollWidth + 100; // 多加100px保险
+                const currentPadR = parseFloat(window.getComputedStyle(container).paddingRight) || 0;
+                container.style.paddingRight = (currentPadR + extraW) + 'px';
+                needsResize = true;
+            }
+
+            // 如果需要的高度 > 当前滚动高度，增加 padding-bottom
+            if (requiredHeight > currentScrollHeight) {
+                const extraH = requiredHeight - currentScrollHeight + 100;
+                const currentPadB = parseFloat(window.getComputedStyle(container).paddingBottom) || 0;
+                container.style.paddingBottom = (currentPadB + extraH) + 'px';
+                needsResize = true;
+            }
+
+            // 如果调整了大小，需要强制重绘连线
+            if (needsResize) {
+                redrawNow();
+            }
+
+            // 3. 执行滚动
+            if (!smooth) viewport.style.scrollBehavior = 'auto';
+            
+            if (smooth && typeof viewport.scrollTo === 'function') { 
+                viewport.scrollTo({ left: targetLeft, top:  targetTop, behavior: 'smooth' }); 
+            } else { 
+                viewport.scrollLeft = targetLeft; 
+                viewport.scrollTop  = targetTop; 
+            }
+            
+            if (!smooth) setTimeout(() => viewport.style.scrollBehavior = '', 50);
+        }
+        
+        function updateChildClarityButton(liElement) {
+            const button = liElement?.querySelector(':scope > .node-content > .child-clarity-btn');
+            if (!button) return;
+            const isExpanded = !liElement.classList.contains('collapsed');
+            const isActive = isExpanded && liElement.classList.contains('keep-children-clear');
+            const label = !isExpanded
+                ? '展开节点后可保持子节点清晰'
+                : isActive ? '停止保持子节点清晰' : '保持直接子节点清晰';
+            button.disabled = !isExpanded;
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            button.setAttribute('aria-pressed', String(isActive));
+        }
+
+        function deactivateChildClarity(liElement) {
+            if (!liElement) return;
+            liElement.classList.remove('keep-children-clear');
+            updateChildClarityButton(liElement);
+        }
+
+        function clearChildClarityStates(exceptNode = null) {
+            document.querySelectorAll('.keep-children-clear').forEach(liElement => {
+                if (liElement !== exceptNode) deactivateChildClarity(liElement);
+            });
+        }
+
+        function reconcileChildClarityForFocus(focusedNode) {
+            document.querySelectorAll('.keep-children-clear').forEach(scopeNode => {
+                const isScopeNode = focusedNode === scopeNode;
+                const isDirectChild = focusedNode?.parentElement?.parentElement === scopeNode;
+                if (!isScopeNode && !isDirectChild) deactivateChildClarity(scopeNode);
+            });
+        }
+
+        function isOnFocusedPath(liElement) {
+            let currentNode = lastFocusedNode;
+            while (currentNode) {
+                if (currentNode === liElement) return true;
+                currentNode = currentNode.parentElement?.closest('li') || null;
+            }
+            return false;
+        }
+
+        function updateToggleForExpandedState(liElement, isExpanded) {
+            const toggle = liElement?.querySelector(':scope > .node-content > .toggle-icon');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(isExpanded));
+                toggle.setAttribute('aria-label', isExpanded ? '折叠子节点' : '展开子节点');
+            }
+            updateChildClarityButton(liElement);
+        }
+
+        function getNodeDepth(liElement) {
+            let depth = 0;
+            let currentNode = liElement;
+            while (currentNode?.parentElement) {
+                currentNode = currentNode.parentElement.closest('li');
+                if (currentNode) depth += 1;
+            }
+            return depth;
+        }
+
+        function isFocusedNodeGlobalDeepestLeaf() {
+            if (!lastFocusedNode || lastFocusedNode.querySelector(':scope > ul > li')) return false;
+            const allNodes = Array.from(container.querySelectorAll('li'));
+            if (allNodes.length === 0) return false;
+            const globalMaxDepth = Math.max(...allNodes.map(getNodeDepth));
+            return getNodeDepth(lastFocusedNode) === globalMaxDepth;
+        }
+
+        function collapseTerminalLeafGroupsForFit(includeFocusedPath = false) {
+            autoCollapsedForFit.clear();
+            const allNodes = Array.from(container.querySelectorAll('li'));
+            if (allNodes.length === 0) return 0;
+
+            const globalMaxDepth = Math.max(...allNodes.map(getNodeDepth));
+            const deepestLeafParents = new Set();
+            allNodes.forEach(liElement => {
+                const nodeContent = liElement.querySelector(':scope > .node-content');
+                if (!nodeContent || nodeContent.offsetParent === null) return;
+                const isGlobalDeepestLeaf = getNodeDepth(liElement) === globalMaxDepth
+                    && !liElement.querySelector(':scope > ul > li');
+                if (!isGlobalDeepestLeaf) return;
+                const parentLi = liElement.parentElement?.closest('li');
+                if (parentLi) deepestLeafParents.add(parentLi);
+            });
+
+            deepestLeafParents.forEach(parentLi => {
+                const parentContent = parentLi.querySelector(':scope > .node-content');
+                if (!parentContent || parentContent.offsetParent === null || parentLi.classList.contains('collapsed')) return;
+                if (!includeFocusedPath && isOnFocusedPath(parentLi)) return;
+                const directChildren = Array.from(parentLi.querySelectorAll(':scope > ul > li'));
+                const allChildrenAreGlobalDeepestLeaves = directChildren.length > 0
+                    && directChildren.every(childLi => getNodeDepth(childLi) === globalMaxDepth
+                        && !childLi.querySelector(':scope > ul > li'));
+                if (!allChildrenAreGlobalDeepestLeaves) return;
+                parentLi.classList.add('collapsed');
+                updateToggleForExpandedState(parentLi, false);
+                autoCollapsedForFit.add(parentLi);
+            });
+            return autoCollapsedForFit.size;
+        }
+
+        function restoreAutoCollapsedLeafGroups() {
+            autoCollapsedForFit.forEach(parentLi => {
+                if (!parentLi.isConnected) return;
+                parentLi.classList.remove('collapsed');
+                updateToggleForExpandedState(parentLi, true);
+            });
+            autoCollapsedForFit.clear();
+        }
+
+        // 5. 退出全屏缩放模式 (修改版：支持指定聚焦目标)
+        function exitFitMode(targetNode = null) {
+            if (fitViewClickTimer) {
+                clearTimeout(fitViewClickTimer);
+                fitViewClickTimer = null;
+            }
+            if (!isFitMode) return;
+            // 1. 立即开启“时间停止”模式
+            container.classList.add('app-no-transition');
+            
+            // 2. 清除状态
+            viewport.classList.remove('fit-mode-active');
+            fitViewBtn.classList.remove('active');
+            fitViewBtn.title = "缩放至全屏；聚焦最深叶子时双击可将其纳入折叠";
+            fitViewBtn.setAttribute('aria-label', fitViewBtn.title);
+            fitViewBtn.setAttribute('aria-pressed', 'false');
+            isFitMode = false;
+            fitModeCanUpgradeWithDouble = false;
+            
+            // 3. 瞬间还原样式
+            container.style.transform = '';
+            container.style.transformOrigin = ''; 
+            container.style.removeProperty('--branch-spacing');
+            restoreAutoCollapsedLeafGroups();
+            
+            // 4. 强制浏览器重排
+            void container.offsetHeight;
+            
+            // 5. 立即重绘连线
+            redrawNow();
+
+            // 6. 瞬间跳回焦点 (修改逻辑：优先使用 targetNode)
+            const nodeToFocus = targetNode || lastFocusedNode || document.querySelector('.node-root');
+
+            if (nodeToFocus) {
+                centerNodeInViewport(nodeToFocus, false);
+                focusOnNode(nodeToFocus, false); 
+            }
+
+            // 7. 恢复动画能力
+            requestAnimationFrame(() => {
+                setTimeout(() => { container.classList.remove('app-no-transition'); }, 50);
+            });
+        }
+
+        function isCoverVisible() {
+            return Boolean(cover && cover.classList.contains('is-visible'));
+        }
+
+        function isImagePreviewOpen() {
+            return Boolean(imageLightbox && imageLightbox.classList.contains('is-visible'));
+        }
+
+        function openImagePreview(sourceImage) {
+            if (!imageLightbox || !imageLightboxContent || !sourceImage) return;
+            const sourceNode = sourceImage.closest('li');
+            if (sourceNode) presentationPreviewedNode = sourceNode;
+            if (imagePreviewClearTimer) {
+                clearTimeout(imagePreviewClearTimer);
+                imagePreviewClearTimer = null;
+            }
+            imageLightboxContent.src = sourceImage.currentSrc || sourceImage.src;
+            imageLightboxContent.alt = sourceImage.alt || '图片预览';
+            imageLightbox.classList.add('is-visible');
+            imageLightbox.setAttribute('aria-hidden', 'false');
+            requestAnimationFrame(() => imageLightbox.focus({ preventScroll: true }));
+        }
+
+        function closeImagePreview() {
+            if (!imageLightbox || !imageLightboxContent || !isImagePreviewOpen()) return;
+            imageLightbox.classList.remove('is-visible');
+            imageLightbox.setAttribute('aria-hidden', 'true');
+            imagePreviewClearTimer = setTimeout(() => {
+                imageLightboxContent.removeAttribute('src');
+                imageLightboxContent.alt = '';
+                imagePreviewClearTimer = null;
+            }, 240);
+            viewport.focus({ preventScroll: true });
+        }
+
+        function fitCoverTypography() {
+            if (!cover) return;
+            const fitSingleLine = (element, minimumSize) => {
+                if (!element) return;
+                element.style.fontSize = '';
+                const computed = window.getComputedStyle(element);
+                if (computed.whiteSpace !== 'nowrap') return;
+                const availableWidth = element.parentElement?.clientWidth || cover.clientWidth * 0.9;
+                const renderedWidth = element.scrollWidth;
+                if (renderedWidth <= availableWidth) return;
+                const currentSize = Number.parseFloat(computed.fontSize) || minimumSize;
+                const fittedSize = Math.max(minimumSize, currentSize * availableWidth / renderedWidth * 0.97);
+                element.style.fontSize = `${fittedSize}px`;
+            };
+            fitSingleLine(cover.querySelector('.cover-title'), 28);
+            fitSingleLine(cover.querySelector('.cover-subtitle'), 24);
+        }
+
+        function showCover() {
+            if (!cover) return;
+            if (centerRootClickTimer) {
+                clearTimeout(centerRootClickTimer);
+                centerRootClickTimer = null;
+            }
+            if (isFitMode) exitFitMode(document.querySelector('.node-root'));
+            cover.classList.add('is-visible');
+            cover.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('cover-visible');
+            fitCoverTypography();
+            requestAnimationFrame(() => {
+                setTimeout(() => cover.focus({ preventScroll: true }), 60);
+            });
+        }
+
+        function hideCover() {
+            if (!cover) return;
+            cover.classList.remove('is-visible');
+            cover.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('cover-visible');
+            const rootNode = document.querySelector('.node-root');
+            if (rootNode) {
+                rootNode.classList.remove('collapsed');
+                deactivateChildClarity(rootNode);
+                const rootToggle = rootNode.querySelector(':scope > .node-content > .toggle-icon');
+                if (rootToggle) {
+                    rootToggle.setAttribute('aria-expanded', 'true');
+                    rootToggle.setAttribute('aria-label', '折叠子节点');
+                }
+            }
+            requestAnimationFrame(() => {
+                if (rootNode) focusOnNode(rootNode, false);
+                requestRedraw();
+                centerRootBtn?.blur();
+                viewport.focus({ preventScroll: true });
+                requestAnimationFrame(() => {
+                    requestRedraw();
+                    if (!isFitMode) fitViewBtn?.click();
+                    viewport.focus({ preventScroll: true });
+                });
+            });
+        }
+
+        // 6. 聚焦节点 (修改版：全屏模式下点击传递自身)
+        function focusOnNode(liElement, smoothScroll) {
+            if (!liElement) return;
+            
+            // [修改] 如果处于全屏模式，将当前点击的节点传给退出函数，实现点击即聚焦
+            if (isFitMode) { 
+                exitFitMode(liElement); 
+                return; 
+            }
+
+            if (lastFocusedNode !== liElement) presentationPreviewedNode = null;
+            reconcileChildClarityForFocus(liElement);
+            document.querySelectorAll('.node-content.focused').forEach(el => el.classList.remove('focused', 'final-focus'));
+            let currentNode = liElement;
+            while (currentNode && currentNode.matches('li')) {
+                const content = currentNode.querySelector(':scope > .node-content');
+                if (content) content.classList.add('focused');
+                currentNode = currentNode.parentElement.closest('li');
+            }
+            const finalContent = liElement.querySelector(':scope > .node-content');
+            if (finalContent) finalContent.classList.add('final-focus');
+            container.classList.add('has-focus');
+            lastFocusedNode = liElement;
+            requestAnimationFrame(() => { centerNodeInViewport(liElement, smoothScroll); requestRedraw(); });
+        }
+
+        function isElementInViewport(el) { if (!el) return false; const rect = el.getBoundingClientRect(); return (rect.top < window.innerHeight && rect.bottom > 0 && rect.left < window.innerWidth && rect.right > 0); }
+
+        // 7. 获取可见内容包围盒
+        function getVisibleContentRect() {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            const nodes = container.querySelectorAll('.node-content');
+            let found = false;
+            nodes.forEach(node => {
+                if (node.offsetParent === null) return;
+                const rect = node.getBoundingClientRect();
+                // 转换为相对于 container 滚动内容的绝对坐标
+                const x = rect.left + viewport.scrollLeft;
+                const y = rect.top + viewport.scrollTop;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x + rect.width > maxX) maxX = x + rect.width;
+                if (y + rect.height > maxY) maxY = y + rect.height;
+                found = true;
+            });
+            if (!found) return null;
+            return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY, centerX: minX + (maxX - minX) / 2, centerY: minY + (maxY - minY) / 2 };
+        }
+
+        // --- 事件监听 ---
+        container.addEventListener('click', function(event) {
+            const target = event.target;
+            const clickedButton = target instanceof Element ? target.closest('button') : null;
+            if (clickedButton) {
+                clickedButton.blur();
+                viewport.focus({ preventScroll: true });
+            }
+            // 图片未聚焦时单击只聚焦；已聚焦时单击直接打开预览。
+            if (target.tagName === 'IMG') {
+                const clickedLi = target.closest('li');
+                const clickedContent = clickedLi?.querySelector(':scope > .node-content');
+                if (clickedContent?.classList.contains('final-focus')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openImagePreview(target);
+                } else if (clickedLi) {
+                    focusOnNode(clickedLi, true);
+                }
+                return;
+            }
+
+            if (target.classList.contains('child-clarity-btn')) {
+                event.stopPropagation();
+                const parentLi = target.closest('li.collapsible');
+                if (parentLi && !parentLi.classList.contains('collapsed') && !target.disabled) {
+                    const shouldActivate = !parentLi.classList.contains('keep-children-clear');
+                    clearChildClarityStates(parentLi);
+                    parentLi.classList.toggle('keep-children-clear', shouldActivate);
+                    updateChildClarityButton(parentLi);
+                }
+            } 
+            else if (target.classList.contains('toggle-icon')) {
+                event.stopPropagation();
+                const parentLi = target.closest('li.collapsible');
+                if (parentLi) {
+                    const isCurrentlyExpanded = !parentLi.classList.contains('collapsed');
+                    if (isCurrentlyExpanded) {
+                        const beforeRect = lastFocusedNode ? lastFocusedNode.getBoundingClientRect() : null;
+                        deactivateChildClarity(parentLi);
+                        parentLi.classList.add('collapsed');
+                        updateChildClarityButton(parentLi);
+                        target.setAttribute('aria-expanded', 'false');
+                        target.setAttribute('aria-label', '展开子节点');
+                        if (lastFocusedNode && parentLi.contains(lastFocusedNode) && lastFocusedNode !== parentLi) {
+                            focusOnNode(parentLi, true);
+                        } else if (beforeRect && !isFitMode) {
+                            const afterRect = lastFocusedNode.getBoundingClientRect();
+                            viewport.scrollTop -= (afterRect.top - beforeRect.top);
+                            viewport.scrollLeft -= (afterRect.left - beforeRect.left);
+                            centerNodeInViewport(lastFocusedNode, false);
+                            requestRedraw();
+                        } else { requestRedraw(); }
+                    } else {
+                        parentLi.classList.remove('collapsed');
+                        deactivateChildClarity(parentLi);
+                        updateChildClarityButton(parentLi);
+                        target.setAttribute('aria-expanded', 'true');
+                        target.setAttribute('aria-label', '折叠子节点');
+                        setTimeout(requestRedraw, 50); 
+                        focusOnNode(parentLi.querySelector('ul > li') || parentLi, true);
+                    }
+                }
+            } 
+            else {
+                const clickedLi = target.closest('li');
+                if (clickedLi) { focusOnNode(clickedLi, true); }
+            }
+        });
+
+        container.addEventListener('dblclick', function(event) {
+            const target = event.target;
+            if (target.tagName !== 'IMG') return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (!isImagePreviewOpen()) openImagePreview(target);
+        });
+
+        if (imageLightbox) {
+            imageLightbox.addEventListener('dblclick', (event) => {
+                event.preventDefault();
+                closeImagePreview();
+            });
+        }
+
+        viewport.addEventListener('scroll', requestRedraw, { passive: true });
+        window.addEventListener('resize', () => { requestRedraw(); fitCoverTypography(); }, { passive: true });
+
+        // 工具栏不参与键盘焦点链，点击后始终将焦点交还导图。
+        if (toolbar) {
+            toolbar.addEventListener('click', (event) => {
+                const button = event.target instanceof Element ? event.target.closest('button') : null;
+                if (!button) return;
+                button.blur();
+                viewport.focus({ preventScroll: true });
+            });
+        }
+        
+        if (toggleBlurBtn) {
+            toggleBlurBtn.addEventListener('click', () => {
+                container.classList.toggle('blur-disabled');
+                const icon = toggleBlurBtn.querySelector('.iconfont');
+                const isDisabled = container.classList.contains('blur-disabled');
+                if (icon) icon.innerHTML = isDisabled ? '&#xe62e;' : '&#xe62d;';
+                toggleBlurBtn.title = isDisabled ? '开启节点模糊效果' : '关闭节点模糊效果';
+                toggleBlurBtn.setAttribute('aria-label', toggleBlurBtn.title);
+                toggleBlurBtn.setAttribute('aria-pressed', String(isDisabled));
+            });
+        }
+
+        function expandPathToNode(targetNode) {
+            let ancestor = targetNode?.parentElement?.closest('li');
+            while (ancestor) {
+                ancestor.classList.remove('collapsed');
+                const toggle = ancestor.querySelector(':scope > .node-content > .toggle-icon');
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'true');
+                    toggle.setAttribute('aria-label', '折叠子节点');
+                }
+                updateChildClarityButton(ancestor);
+                ancestor = ancestor.parentElement?.closest('li');
+            }
+        }
+
+        function navigatePresentation(direction) {
+            const nodes = Array.from(container.querySelectorAll('li'));
+            if (nodes.length === 0) return;
+            const currentIndex = nodes.indexOf(lastFocusedNode);
+            const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+            const targetIndex = baseIndex + direction;
+            if (targetIndex < 0) {
+                if (cover) showCover();
+                else focusOnNode(nodes[0], true);
+                return;
+            }
+            if (targetIndex >= nodes.length) return;
+            const targetNode = nodes[targetIndex];
+            expandPathToNode(targetNode);
+            focusOnNode(targetNode, true);
+            viewport.focus({ preventScroll: true });
+        }
+
+        function openFocusedImageForPresentation() {
+            if (!lastFocusedNode || presentationPreviewedNode === lastFocusedNode) return false;
+            const focusedContent = lastFocusedNode.querySelector(':scope > .node-content');
+            const focusedImage = focusedContent?.querySelector('img');
+            if (!focusedImage) return false;
+            presentationPreviewedNode = lastFocusedNode;
+            openImagePreview(focusedImage);
+            return true;
+        }
+        
+        function focusHomeNode() {
+            const rootNode = document.querySelector('.node-root');
+            if (isFitMode) { exitFitMode(rootNode); return; }
+            if (lastFocusedNode && !isElementInViewport(lastFocusedNode)) {
+                focusOnNode(lastFocusedNode, true);
+            } else if (rootNode) {
+                focusOnNode(rootNode, true);
+            }
+        }
+
+        if (centerRootBtn) {
+            if (cover) {
+                centerRootBtn.title = '单击聚焦主节点，双击显示封面';
+                centerRootBtn.setAttribute('aria-label', '聚焦主节点；双击显示封面');
+            }
+            centerRootBtn.addEventListener('click', (event) => {
+                if (!cover || event.detail === 0) {
+                    focusHomeNode();
+                    return;
+                }
+                if (event.detail > 1) return;
+                if (centerRootClickTimer) clearTimeout(centerRootClickTimer);
+                centerRootClickTimer = setTimeout(() => {
+                    centerRootClickTimer = null;
+                    focusHomeNode();
+                }, 240);
+            });
+            centerRootBtn.addEventListener('dblclick', (event) => {
+                if (!cover) return;
+                event.preventDefault();
+                if (centerRootClickTimer) {
+                    clearTimeout(centerRootClickTimer);
+                    centerRootClickTimer = null;
+                }
+                showCover();
+            });
+        }
+
+        if (cover) {
+            cover.addEventListener('click', hideCover);
+            document.addEventListener('keydown', (event) => {
+                if (event.defaultPrevented) return;
+                if (!isCoverVisible()) return;
+                const advanceKeys = new Set(['Escape', 'Enter', ' ', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'PageDown']);
+                if (advanceKeys.has(event.key)) {
+                    event.preventDefault();
+                    hideCover();
+                }
+            });
+        }
+
+        const forwardKeys = new Set(['PageDown', 'ArrowRight', 'ArrowDown', ' ', 'Enter', 'MediaTrackNext']);
+        const backwardKeys = new Set(['PageUp', 'ArrowLeft', 'ArrowUp', 'Backspace', 'MediaTrackPrevious']);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.defaultPrevented) return;
+            if (isImagePreviewOpen()) {
+                if (event.key === 'Escape' || forwardKeys.has(event.key) || backwardKeys.has(event.key)) {
+                    event.preventDefault();
+                    closeImagePreview();
+                }
+                return;
+            }
+            if (isCoverVisible()) return;
+            if (event.altKey || event.ctrlKey || event.metaKey) return;
+            if (event.target instanceof Element && event.target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
+
+            if (forwardKeys.has(event.key)) {
+                event.preventDefault();
+                if (!openFocusedImageForPresentation()) navigatePresentation(1);
+            } else if (backwardKeys.has(event.key)) {
+                event.preventDefault();
+                navigatePresentation(-1);
+            }
+        });
+
+        // 8. 智能缩放按钮逻辑
+        function enterFitMode(includeFocusedPath = false, canUpgradeWithDouble = false) {
+            if (isFitMode) return;
+            viewport.classList.add('fit-mode-active');
+            fitViewBtn.classList.add('active');
+            fitViewBtn.title = canUpgradeWithDouble ? "单击取消缩放，双击将当前最深叶子纳入折叠" : "单击或双击取消缩放";
+            fitViewBtn.setAttribute('aria-label', fitViewBtn.title);
+            fitViewBtn.setAttribute('aria-pressed', 'true');
+            isFitMode = true;
+            fitModeCanUpgradeWithDouble = canUpgradeWithDouble;
+            void viewport.offsetWidth;
+
+            let rect = getVisibleContentRect();
+            if (!rect) { exitFitMode(); return; }
+
+            const vpW = viewport.clientWidth;
+            const vpH = viewport.clientHeight;
+            const padding = 50;
+
+            const initialScaleX = (vpW - padding) / rect.width;
+            const initialScaleY = (vpH - padding) / rect.height;
+            const needsOverviewCompaction = Math.min(initialScaleX, initialScaleY) < 1;
+            const shouldCompact = includeFocusedPath || needsOverviewCompaction;
+            if (shouldCompact && collapseTerminalLeafGroupsForFit(includeFocusedPath) > 0) {
+                container.classList.add('app-no-transition');
+                void container.offsetHeight;
+                redrawNow();
+                rect = getVisibleContentRect();
+                container.classList.remove('app-no-transition');
+                if (!rect) { exitFitMode(); return; }
+            }
+
+            const vpRatio = (vpW - padding) / (vpH - padding);
+            const mapRatio = rect.width / rect.height;
+
+            if (mapRatio < vpRatio) {
+                container.classList.add('app-no-transition');
+                const currentSpacing = 80;
+                const ratioFactor = vpRatio / mapRatio;
+                let newSpacing = Math.max(80, currentSpacing * ratioFactor * 2.5);
+                newSpacing = Math.min(newSpacing, 4000);
+
+                container.style.setProperty('--branch-spacing', `${newSpacing}px`);
+                void container.offsetHeight;
+                redrawNow();
+                rect = getVisibleContentRect();
+                container.classList.remove('app-no-transition');
+            }
+
+            const scaleX = (vpW - padding) / rect.width;
+            const scaleY = (vpH - padding) / rect.height;
+            const scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.05), 1);
+
+            container.style.transformOrigin = `${rect.centerX}px ${rect.centerY}px`;
+            viewport.style.scrollBehavior = 'auto';
+            container.style.transform = `scale(${scale})`;
+            viewport.scrollLeft = rect.centerX - vpW / 2;
+            viewport.scrollTop = rect.centerY - vpH / 2;
+
+            setTimeout(() => {
+                viewport.style.scrollBehavior = '';
+            }, 50);
+        }
+
+        function toggleFitMode() {
+            if (isFitMode) exitFitMode();
+            else {
+                const canUpgradeWithDouble = isFocusedNodeGlobalDeepestLeaf();
+                enterFitMode(false, canUpgradeWithDouble);
+            }
+        }
+
+        if (fitViewBtn) {
+            fitViewBtn.addEventListener('click', (event) => {
+                if (event.detail === 0) {
+                    toggleFitMode();
+                    return;
+                }
+                if (event.detail > 1) return;
+                if (fitViewClickTimer) clearTimeout(fitViewClickTimer);
+                fitViewClickTimer = setTimeout(() => {
+                    fitViewClickTimer = null;
+                    toggleFitMode();
+                }, 240);
+            });
+
+            fitViewBtn.addEventListener('dblclick', (event) => {
+                event.preventDefault();
+                if (fitViewClickTimer) {
+                    clearTimeout(fitViewClickTimer);
+                    fitViewClickTimer = null;
+                }
+                if (isFitMode && fitModeCanUpgradeWithDouble) {
+                    exitFitMode();
+                    requestAnimationFrame(() => enterFitMode(true, false));
+                } else if (isFitMode) {
+                    exitFitMode();
+                } else {
+                    const includeFocusedPath = isFocusedNodeGlobalDeepestLeaf();
+                    enterFitMode(includeFocusedPath, false);
+                }
+            });
+        }
+
+        function adjustToolbarPosition() {
+            const toolbar = document.getElementById('mindmap-toolbar');
+            const logo = document.getElementById('custom-logo');
+            if (!toolbar) return;
+            if (logo && logo.dataset.position === 'top-right') {
+                toolbar.style.top = 'auto'; toolbar.style.bottom = '20px';
+            } else {
+                toolbar.style.bottom = 'auto'; toolbar.style.top = '20px';
+            }
+        }
+
+        function injectChildClarityButtons() {
+            document.querySelectorAll('li.collapsible').forEach(li => {
+                const nodeContent = li.querySelector(':scope > .node-content');
+                if (nodeContent && !nodeContent.querySelector('.child-clarity-btn')) {
+                    const clarityButton = document.createElement('button');
+                    clarityButton.type = 'button';
+                    clarityButton.tabIndex = -1;
+                    clarityButton.className = 'child-clarity-btn iconfont';
+                    clarityButton.innerHTML = '&#xe624;';
+                    clarityButton.title = '保持直接子节点清晰';
+                    clarityButton.setAttribute('aria-label', '保持直接子节点清晰');
+                    clarityButton.setAttribute('aria-pressed', 'false');
+                    nodeContent.appendChild(clarityButton);
+                }
+                updateChildClarityButton(li);
+            });
+        }
+        
+        // 9. 图片加载监听 (关键：图片加载会导致节点高度变化，必须重绘连线)
+        const images = container.querySelectorAll('img');
+        if (images.length > 0) {
+            let loadedCount = 0;
+            images.forEach(img => {
+                if (img.complete) {
+                    loadedCount++;
+                } else {
+                    img.addEventListener('load', requestRedraw);
+                    img.addEventListener('error', requestRedraw);
+                }
+            });
+            if (loadedCount === images.length) {
+                requestRedraw();
+            }
+        }
+
+        // 初始化序列
+        if (isCoverVisible()) {
+            document.body.classList.add('cover-visible');
+            fitCoverTypography();
+            requestAnimationFrame(() => cover.focus({ preventScroll: true }));
+        }
+        const rootNode = document.querySelector('.node-root');
+        if (rootNode) {
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    injectChildClarityButtons();
+                    focusOnNode(rootNode, false);
+                    adjustToolbarPosition();
+                });
+            }, 200);
+        } else {
+            injectChildClarityButtons();
+            requestRedraw();
+            adjustToolbarPosition();
+        }
+    });
+</script>
+</body>
+</html>
