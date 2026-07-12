@@ -195,7 +195,7 @@ class CommandTests(unittest.TestCase):
     def test_default_cover_background_is_a_local_project_asset(self):
         project_root = Path(__file__).resolve().parents[1]
         config = configparser.ConfigParser(interpolation=None)
-        config.read(project_root / "config.ini", encoding="utf-8")
+        config.read(project_root / "config.conf", encoding="utf-8")
         background = config.get("Cover", "background_image")
 
         self.assertEqual(background, "assets/cover-default.svg")
@@ -220,7 +220,7 @@ class CommandTests(unittest.TestCase):
         markdown.write_text("# Root\n- ![picture](picture.png)", encoding="utf-8")
         (self.root / "picture.png").write_bytes(b"new-picture")
         (self.root / "logo.png").write_bytes(b"logo")
-        config = self.root / "custom.ini"
+        config = self.root / "custom.conf"
         config.write_text(
             "[Logo]\nimage_url = logo.png\nposition = top-right\n\n"
             "[Cover]\nenabled = true\nshow_on_open = false\n"
@@ -256,6 +256,9 @@ class CommandTests(unittest.TestCase):
         self.assertIn("PageDown", document)
         self.assertIn("mindmap-container.blur-disabled .node-content", document)
         self.assertIn('#mindmap-toolbar button[aria-pressed="true"]', document)
+        self.assertIn('top: 20px; right: 20px;', document)
+        self.assertIn('#mindmap-toolbar:hover, #mindmap-toolbar:focus-within', document)
+        self.assertIn('@media (hover: none), (pointer: coarse)', document)
         self.assertIn('background-color: white; border-color: #409eff; color: #409eff;', document)
         self.assertLess(
             document.index('id="center-root-btn"'),
@@ -264,6 +267,10 @@ class CommandTests(unittest.TestCase):
         self.assertLess(
             document.index('id="toggle-blur-btn"'),
             document.index('id="fit-view-btn"'),
+        )
+        self.assertLess(
+            document.index('id="fit-view-btn"'),
+            document.index('id="browser-fullscreen-btn"'),
         )
         self.assertIn(
             'id="toggle-blur-btn" tabindex="-1" title="关闭节点模糊效果" '
@@ -290,9 +297,17 @@ class CommandTests(unittest.TestCase):
         self.assertIn("needsOverviewCompaction", document)
         self.assertIn("const shouldCompact = includeFocusedPath || needsOverviewCompaction", document)
         self.assertIn("toolbar.addEventListener('click'", document)
+        self.assertIn("logo.dataset.position === 'top-right'", document)
         self.assertIn('id="center-root-btn" tabindex="-1"', document)
         self.assertIn('id="toggle-blur-btn" tabindex="-1"', document)
         self.assertIn('id="fit-view-btn" tabindex="-1"', document)
+        self.assertIn('id="browser-fullscreen-btn" tabindex="-1"', document)
+        self.assertIn("fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen", document)
+        self.assertIn("document.exitFullscreen || document.webkitExitFullscreen", document)
+        self.assertIn("document.addEventListener('fullscreenchange'", document)
+        self.assertIn("document.addEventListener('webkitfullscreenchange'", document)
+        self.assertIn("isFullscreen ? '&#xe671;' : '&#xe673;'", document)
+        self.assertIn("browserFullscreenBtn.setAttribute('aria-pressed', String(isFullscreen))", document)
         self.assertIn("viewport.focus({ preventScroll: true })", document)
         self.assertIn("clarityButton.tabIndex = -1", document)
         self.assertIn("clickedButton.blur()", document)
@@ -313,7 +328,7 @@ class CommandTests(unittest.TestCase):
     def test_cover_can_be_omitted_even_when_config_enables_it(self):
         markdown = self.root / "input.md"
         markdown.write_text("# Root\n- Item", encoding="utf-8")
-        config = self.root / "custom.ini"
+        config = self.root / "custom.conf"
         config.write_text("[Cover]\nenabled = true\n", encoding="utf-8")
 
         html_path = build_mindmap(

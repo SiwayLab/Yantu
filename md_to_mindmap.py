@@ -641,7 +641,7 @@ def build_mindmap(
         raise ValueError(f"输入文件必须是 .md 文件: {markdown_path}")
 
     template_path = (template_path or script_dir / "template.html").expanduser().resolve()
-    config_path = (config_path or script_dir / "config.ini").expanduser().resolve()
+    config_path = (config_path or script_dir / "config.conf").expanduser().resolve()
     source_icons_dir = script_dir / "source_icons"
     if not template_path.is_file():
         raise FileNotFoundError(f"找不到模板文件: {template_path}")
@@ -731,7 +731,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("input", nargs="?", type=Path, help="Markdown 文件；省略时从项目目录交互选择")
     parser.add_argument("-o", "--output-dir", type=Path, help="输出目录，默认与 Markdown 同目录且同名")
     parser.add_argument("--template", type=Path, help="自定义 HTML 模板路径")
-    parser.add_argument("--config", type=Path, help="自定义 INI 配置文件路径")
+    parser.add_argument("--config", type=Path, help="自定义配置文件路径")
     cover_group = parser.add_mutually_exclusive_group()
     cover_group.add_argument("--cover", dest="cover_enabled", action="store_true", help="生成封面")
     cover_group.add_argument("--no-cover", dest="cover_enabled", action="store_false", help="不生成封面")
@@ -757,7 +757,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     script_dir = Path(__file__).resolve().parent
     try:
         markdown_path = args.input or select_markdown_file(discover_markdown_files(script_dir))
-        resolved_config_path = (args.config or script_dir / "config.ini").expanduser().resolve()
+        resolved_config_path = (args.config or script_dir / "config.conf").expanduser().resolve()
         prompt_config = _load_config(resolved_config_path)
         resolved_cover_enabled = (
             _config_boolean(prompt_config, "Cover", "enabled", False)

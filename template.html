@@ -58,11 +58,15 @@
         @media (prefers-reduced-motion: reduce) { #mindmap-cover, .cover-content { transition: none !important; } }
         
         /* --- 工具栏 --- */
-        #mindmap-toolbar { position: fixed; top: 20px; right: 20px; z-index: 1001; display: flex; gap: 10px; transition: top 0.3s ease, bottom 0.3s ease; }
-        #mindmap-toolbar button { background-color: white; border: 1px solid #dcdfe6; border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s ease; color: #606266; opacity: 0.7; }
+        #mindmap-toolbar { position: fixed; top: 20px; right: 20px; z-index: 1001; display: flex; gap: 8px; opacity: 0.18; transform: translateY(6px); filter: saturate(0.55); transition: top 0.3s ease, bottom 0.3s ease, opacity 0.22s ease, transform 0.22s ease, filter 0.22s ease; }
+        #mindmap-toolbar:hover, #mindmap-toolbar:focus-within { opacity: 1; transform: translateY(0); filter: none; }
+        #mindmap-toolbar button { background-color: rgba(255,255,255,0.96); border: 1px solid #dcdfe6; border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.2s ease; color: #606266; opacity: 0.9; }
         #mindmap-toolbar button:hover { border-color: #4a90e2; color: #4a90e2; transform: translateY(-1px); opacity: 1; }
         #mindmap-toolbar button[aria-pressed="true"] { background-color: white; border-color: #409eff; color: #409eff; opacity: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
         #mindmap-toolbar button[aria-pressed="true"]:hover { background-color: white; border-color: #337ecc; color: #337ecc; }
+        #mindmap-toolbar button:disabled { cursor: not-allowed; opacity: 0.35; transform: none; }
+        @media (hover: none), (pointer: coarse) { #mindmap-toolbar { opacity: 0.72; transform: none; filter: none; } }
+        @media (prefers-reduced-motion: reduce) { #mindmap-toolbar { transition: none !important; } }
         
         /* --- 视口与容器 (核心布局) --- */
         #mindmap-viewport { position: absolute; inset: 0; overflow: auto; scroll-behavior: smooth; }
@@ -180,7 +184,8 @@
     <div id="mindmap-toolbar">
         <button type="button" id="center-root-btn" tabindex="-1" title="聚焦主节点" aria-label="聚焦主节点"><i class="iconfont" aria-hidden="true">&#xe62c;</i></button>
         <button type="button" id="toggle-blur-btn" tabindex="-1" title="关闭节点模糊效果" aria-label="关闭节点模糊效果" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe62d;</i></button>
-        <button type="button" id="fit-view-btn" tabindex="-1" title="缩放至全屏；聚焦最深叶子时双击可将其纳入折叠" aria-label="缩放至全屏；聚焦最深叶子时双击可将其纳入折叠" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe618;</i></button>
+        <button type="button" id="fit-view-btn" tabindex="-1" title="全图缩放（适应窗口）；聚焦最深叶子时双击可将其纳入折叠" aria-label="全图缩放（适应窗口）；聚焦最深叶子时双击可将其纳入折叠" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe618;</i></button>
+        <button type="button" id="browser-fullscreen-btn" tabindex="-1" title="进入浏览器全屏" aria-label="进入浏览器全屏" aria-pressed="false"><i class="iconfont" aria-hidden="true">&#xe673;</i></button>
     </div>
     {logo_html}
     <div id="image-lightbox" role="dialog" aria-modal="true" aria-label="图片全屏预览" aria-hidden="true" tabindex="-1">
@@ -204,6 +209,7 @@
         const toggleBlurBtn = document.getElementById('toggle-blur-btn');
         const centerRootBtn = document.getElementById('center-root-btn');
         const fitViewBtn    = document.getElementById('fit-view-btn');
+        const browserFullscreenBtn = document.getElementById('browser-fullscreen-btn');
         const cover         = document.getElementById('mindmap-cover');
         const imageLightbox = document.getElementById('image-lightbox');
         const imageLightboxContent = document.getElementById('image-lightbox-content');
@@ -433,7 +439,7 @@
             // 2. 清除状态
             viewport.classList.remove('fit-mode-active');
             fitViewBtn.classList.remove('active');
-            fitViewBtn.title = "缩放至全屏；聚焦最深叶子时双击可将其纳入折叠";
+            fitViewBtn.title = "全图缩放（适应窗口）；聚焦最深叶子时双击可将其纳入折叠";
             fitViewBtn.setAttribute('aria-label', fitViewBtn.title);
             fitViewBtn.setAttribute('aria-pressed', 'false');
             isFitMode = false;
@@ -697,7 +703,7 @@
         }
 
         viewport.addEventListener('scroll', requestRedraw, { passive: true });
-        window.addEventListener('resize', () => { requestRedraw(); fitCoverTypography(); }, { passive: true });
+        window.addEventListener('resize', () => { requestRedraw(); fitCoverTypography(); adjustToolbarPosition(); }, { passive: true });
 
         // 工具栏不参与键盘焦点链，点击后始终将焦点交还导图。
         if (toolbar) {
@@ -719,6 +725,64 @@
                 toggleBlurBtn.setAttribute('aria-label', toggleBlurBtn.title);
                 toggleBlurBtn.setAttribute('aria-pressed', String(isDisabled));
             });
+        }
+
+        function getBrowserFullscreenElement() {
+            return document.fullscreenElement || document.webkitFullscreenElement || null;
+        }
+
+        function updateBrowserFullscreenButton() {
+            if (!browserFullscreenBtn) return;
+            const isFullscreen = Boolean(getBrowserFullscreenElement());
+            const label = isFullscreen ? '退出浏览器全屏' : '进入浏览器全屏';
+            const icon = browserFullscreenBtn.querySelector('.iconfont');
+            if (icon) icon.innerHTML = isFullscreen ? '&#xe671;' : '&#xe673;';
+            browserFullscreenBtn.title = label;
+            browserFullscreenBtn.setAttribute('aria-label', label);
+            browserFullscreenBtn.setAttribute('aria-pressed', String(isFullscreen));
+        }
+
+        async function toggleBrowserFullscreen() {
+            if (!browserFullscreenBtn) return;
+            try {
+                if (getBrowserFullscreenElement()) {
+                    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+                    if (exitFullscreen) await exitFullscreen.call(document);
+                } else {
+                    const fullscreenTarget = document.documentElement;
+                    const requestFullscreen = fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen;
+                    if (requestFullscreen) await requestFullscreen.call(fullscreenTarget);
+                }
+            } catch (error) {
+                console.warn('无法切换浏览器全屏：', error);
+                updateBrowserFullscreenButton();
+            }
+        }
+
+        function handleBrowserFullscreenChange() {
+            updateBrowserFullscreenButton();
+            fitCoverTypography();
+            requestAnimationFrame(() => {
+                requestRedraw();
+                if (!isFitMode && lastFocusedNode && !isCoverVisible() && !isImagePreviewOpen()) {
+                    centerNodeInViewport(lastFocusedNode, false);
+                }
+            });
+        }
+
+        if (browserFullscreenBtn) {
+            const fullscreenTarget = document.documentElement;
+            const fullscreenSupported = Boolean(fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen);
+            browserFullscreenBtn.disabled = !fullscreenSupported;
+            if (!fullscreenSupported) {
+                browserFullscreenBtn.title = '当前浏览器不支持页面全屏';
+                browserFullscreenBtn.setAttribute('aria-label', browserFullscreenBtn.title);
+            } else {
+                browserFullscreenBtn.addEventListener('click', toggleBrowserFullscreen);
+                document.addEventListener('fullscreenchange', handleBrowserFullscreenChange);
+                document.addEventListener('webkitfullscreenchange', handleBrowserFullscreenChange);
+                updateBrowserFullscreenButton();
+            }
         }
 
         function expandPathToNode(targetNode) {
@@ -947,10 +1011,14 @@
             const toolbar = document.getElementById('mindmap-toolbar');
             const logo = document.getElementById('custom-logo');
             if (!toolbar) return;
+            toolbar.style.left = 'auto';
+            toolbar.style.right = '20px';
             if (logo && logo.dataset.position === 'top-right') {
-                toolbar.style.top = 'auto'; toolbar.style.bottom = '20px';
+                toolbar.style.top = 'auto';
+                toolbar.style.bottom = '20px';
             } else {
-                toolbar.style.bottom = 'auto'; toolbar.style.top = '20px';
+                toolbar.style.bottom = 'auto';
+                toolbar.style.top = '20px';
             }
         }
 
