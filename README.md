@@ -81,6 +81,17 @@ python3 md_to_mindmap.py
 
 直接回车使用 `config.conf` 中 `show_on_open` 的默认值。
 
+未传入字体预设参数时，交互终端还会提供两项选择：
+
+```text
+封面字体预设:
+  [1] 浅色字（适合深色背景）
+  [2] 深色字（适合浅色背景）
+请选择 (1/2，默认 2):
+```
+
+直接回车使用 `config.conf` 中 `default_text_preset` 的默认值。非交互运行不会询问，直接采用配置值。
+
 ### 指定输出目录
 
 ```bash
@@ -236,6 +247,8 @@ python3 md_to_mindmap.py --help
 | `--no-cover` | 强制不生成封面。 |
 | `--show-cover-on-open` | 打开 HTML 时默认显示封面。 |
 | `--skip-cover-on-open` | 生成封面，但打开时直接进入导图。 |
+| `--light-cover-text` | 使用浅色字体预设，适合深色封面。 |
+| `--dark-cover-text` | 使用深色字体预设，适合浅色封面。 |
 | `-h, --help` | 显示帮助。 |
 
 无需终端询问地生成并显示封面：
@@ -249,6 +262,14 @@ python3 md_to_mindmap.py "大纲.md" --cover --show-cover-on-open
 ```bash
 python3 md_to_mindmap.py "大纲.md" --cover --skip-cover-on-open
 ```
+
+为浅色背景选择深色字体预设：
+
+```bash
+python3 md_to_mindmap.py "大纲.md" --dark-cover-text
+```
+
+`--light-cover-text` 与 `--dark-cover-text` 互斥；两者都不传时，使用配置文件中的 `default_text_preset`。
 
 在交互式终端中，只指定输入文件但不指定上述封面展示参数时，程序仍可能询问是否默认显示封面。用于脚本或自动化流程时，建议显式传入 `--show-cover-on-open` 或 `--skip-cover-on-open`。
 
@@ -310,9 +331,14 @@ presenter_label =
 organization = XX大学
 date = 2026年7月
 
-background_image = assets/cover-default.svg
-background_overlay = rgba(8, 26, 58, 0.42)
-text_color = #ffffff
+background_image = assets/cover-default.png
+background_overlay = rgba(8, 26, 58, 0)
+
+default_text_preset = dark
+light_text_color = #ffffff
+light_outline_color = rgba(5, 18, 32, 0.5)
+dark_text_color = #123456
+dark_outline_color = rgba(255, 255, 255, 0.68)
 accent_color = #8ed7ff
 
 logo_top_left =
@@ -336,13 +362,19 @@ logo_margin = 32px
 | `date` | 日期文本；留空时不显示。 |
 | `background_image` | 本地背景图或网络 URL。 |
 | `background_overlay` | 背景遮罩颜色，用于提高文字可读性。 |
-| `text_color` | 封面文字颜色。 |
+| `default_text_preset` | 默认字体预设：`light`（浅色字）或 `dark`（深色字）。 |
+| `light_text_color` | 浅色字体预设的文字颜色。 |
+| `light_outline_color` | 浅色字体预设的细描边颜色。 |
+| `dark_text_color` | 深色字体预设的文字颜色。 |
+| `dark_outline_color` | 深色字体预设的细描边颜色。 |
 | `accent_color` | 标题装饰线和封面焦点颜色。 |
 | `logo_top_left` 等 | 四个角落的独立 Logo。 |
 | `logo_size` | 封面 Logo 的最大宽度和高度。 |
 | `logo_margin` | 封面 Logo 与页面边缘的距离。 |
 
-项目自带可离线打包的默认背景 `assets/cover-default.svg`。可以将 `background_image` 替换为 JPG、PNG、WebP、SVG 或网络图片。
+项目自带可离线打包的默认背景 `assets/cover-default.png`。可以将 `background_image` 替换为 JPG、PNG、WebP、SVG 或网络图片。
+
+两套字体预设是固定选择，不会读取或分析背景图片。浅色字预设适合深色背景，深色字预设适合浅色背景；命令行选项只覆盖本次生成，不会修改配置文件。
 
 封面标题会根据长度自动选择字号：短标题优先保持一行，长标题自动缩小并在必要时换行。包含冒号或破折号的标题默认拆分为字号接近的主标题和副标题；显式设置 `subtitle` 时不会使用自动拆分结果。
 

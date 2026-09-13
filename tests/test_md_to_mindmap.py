@@ -9,10 +9,12 @@ from md_to_mindmap import (
     MarkdownToMindmapConverter,
     _render_template,
     build_mindmap,
+    create_argument_parser,
     discover_markdown_files,
     generate_cover,
     generate_custom_styles_and_logo,
     select_boolean,
+    select_cover_text_preset,
     select_markdown_file,
 )
 
@@ -175,6 +177,53 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotIn("cover-separator", cover)
         self.assertNotIn("cover-metadata", cover)
 
+    def test_cover_text_presets_use_config_default_and_allow_override(self):
+        config = configparser.ConfigParser(interpolation=None)
+        config.read_dict(
+            {
+                "Cover": {
+                    "default_text_preset": "dark",
+                    "dark_text_color": "#102a43",
+                    "dark_outline_color": "rgba(255, 255, 255, 0.6)",
+                    "light_text_color": "#f8fafc",
+                    "light_outline_color": "rgba(5, 18, 32, 0.5)",
+                }
+            }
+        )
+
+        dark_styles, dark_cover = generate_cover(
+            config,
+            document_title="研究标题",
+            enabled=True,
+            show_on_open=True,
+        )
+        light_styles, light_cover = generate_cover(
+            config,
+            document_title="研究标题",
+            enabled=True,
+            show_on_open=True,
+            text_preset="light",
+        )
+
+        self.assertIn("--cover-text-color: #102a43", dark_styles)
+        self.assertIn("--cover-outline-color: rgba(255, 255, 255, 0.6)", dark_styles)
+        self.assertIn('data-text-preset="dark"', dark_cover)
+        self.assertIn("--cover-text-color: #f8fafc", light_styles)
+        self.assertIn("--cover-outline-color: rgba(5, 18, 32, 0.5)", light_styles)
+        self.assertIn('data-text-preset="light"', light_cover)
+
+    def test_invalid_cover_text_preset_is_rejected(self):
+        config = configparser.ConfigParser(interpolation=None)
+        config.read_dict({"Cover": {"default_text_preset": "automatic"}})
+
+        with self.assertRaisesRegex(ValueError, "light 或 dark"):
+            generate_cover(
+                config,
+                document_title="研究标题",
+                enabled=True,
+                show_on_open=True,
+            )
+
 
 class CommandTests(unittest.TestCase):
     def setUp(self):
@@ -215,6 +264,34 @@ class CommandTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             select_boolean("show", True, input_func=lambda _prompt: "maybe")
 
+    def test_cover_text_command_options_select_a_preset(self):
+        parser = create_argument_parser()
+
+        self.assertEqual(
+            parser.parse_args(["input.md", "--light-cover-text"]).cover_text_preset,
+            "light",
+        )
+        self.assertEqual(
+            parser.parse_args(["input.md", "--dark-cover-text"]).cover_text_preset,
+            "dark",
+        )
+
+    def test_cover_text_selection_uses_default_and_validates_input(self):
+        self.assertEqual(
+            select_cover_text_preset("dark", input_func=lambda _prompt: ""),
+            "dark",
+        )
+        self.assertEqual(
+            select_cover_text_preset("dark", input_func=lambda _prompt: "1"),
+            "light",
+        )
+        self.assertEqual(
+            select_cover_text_preset("light", input_func=lambda _prompt: "深色"),
+            "dark",
+        )
+        with self.assertRaisesRegex(ValueError, "字体预设"):
+            select_cover_text_preset("light", input_func=lambda _prompt: "auto")
+
     def test_build_packages_local_logo_and_refreshes_existing_images(self):
         markdown = self.root / "input.md"
         markdown.write_text("# Root\n- ![picture](picture.png)", encoding="utf-8")
@@ -237,11 +314,15 @@ class CommandTests(unittest.TestCase):
             output_dir=output,
             config_path=config,
             show_cover_on_open=True,
+            cover_text_preset="dark",
         )
         document = html_path.read_text(encoding="utf-8")
 
         self.assertIn('id="custom-logo" src="images/logo.png"', document)
         self.assertIn('id="mindmap-cover" class="mindmap-cover is-visible"', document)
+        self.assertIn('data-text-preset="dark"', document)
+        self.assertIn("--cover-text-color: #123456", document)
+        self.assertNotIn("updateCoverTextOutline", document)
         self.assertIn('style id="cover-custom-styles"', document)
         self.assertIn("双击显示封面", document)
         self.assertIn('id="image-lightbox"', document)

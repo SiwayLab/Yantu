@@ -23,6 +23,7 @@ HEADING_PATTERN = re.compile(r"^ {0,3}(#{1,6})\s+(.+?)\s*$")
 LIST_PATTERN = re.compile(r"^([ \t]*)([-+*]|\d+[.)])\s+(.+?)\s*$")
 SAFE_CSS_VALUE_PATTERN = re.compile(r"^[^;{}<>\r\n]+$")
 CSS_LENGTH_PATTERN = re.compile(r"^(?:0|\d+(?:\.\d+)?(?:px|rem|em|vh|vw|%))$")
+COVER_TEXT_PRESETS = {"light", "dark"}
 
 
 def warn(message: str) -> None:
@@ -329,6 +330,19 @@ def _config_boolean(
         return fallback
 
 
+def _resolve_cover_text_preset(
+    config: configparser.ConfigParser,
+    override: str | None = None,
+) -> str:
+    preset = (
+        override
+        or config.get("Cover", "default_text_preset", fallback="light")
+    ).strip().casefold()
+    if preset not in COVER_TEXT_PRESETS:
+        raise ValueError("封面字体预设必须是 light 或 dark。")
+    return preset
+
+
 def _css_url(value: str) -> str:
     return value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "").replace("\r", "")
 
@@ -397,6 +411,7 @@ def generate_cover(
     document_title: str,
     enabled: bool,
     show_on_open: bool,
+    text_preset: str | None = None,
 ) -> tuple[str, str]:
     if not enabled:
         return "", ""
@@ -422,10 +437,33 @@ def generate_cover(
         config.get("Cover", "background_overlay", fallback="rgba(8, 26, 58, 0.42)"),
         "rgba(8, 26, 58, 0.42)",
     )
-    text_color = _safe_css_value(
-        config.get("Cover", "text_color", fallback="#ffffff"),
-        "#ffffff",
-    )
+    resolved_text_preset = _resolve_cover_text_preset(config, text_preset)
+
+    legacy_text_color = config.get("Cover", "text_color", fallback="#ffffff")
+    if resolved_text_preset == "light":
+        text_color = _safe_css_value(
+            config.get("Cover", "light_text_color", fallback=legacy_text_color),
+            "#ffffff",
+        )
+        outline_color = _safe_css_value(
+            config.get("Cover", "light_outline_color", fallback="rgba(5, 18, 32, 0.5)"),
+            "rgba(5, 18, 32, 0.5)",
+        )
+        title_shadow = "0 3px 12px rgba(0, 0, 0, 0.26), 0 10px 30px rgba(0, 0, 0, 0.14)"
+        subtitle_shadow = "0 2px 9px rgba(0, 0, 0, 0.24), 0 7px 24px rgba(0, 0, 0, 0.12)"
+        metadata_shadow = "0 2px 8px rgba(0, 0, 0, 0.22)"
+    else:
+        text_color = _safe_css_value(
+            config.get("Cover", "dark_text_color", fallback="#123456"),
+            "#123456",
+        )
+        outline_color = _safe_css_value(
+            config.get("Cover", "dark_outline_color", fallback="rgba(255, 255, 255, 0.68)"),
+            "rgba(255, 255, 255, 0.68)",
+        )
+        title_shadow = "0 1px 4px rgba(255, 255, 255, 0.5), 0 9px 26px rgba(18, 52, 86, 0.16)"
+        subtitle_shadow = "0 1px 3px rgba(255, 255, 255, 0.46), 0 6px 20px rgba(18, 52, 86, 0.14)"
+        metadata_shadow = "0 1px 3px rgba(255, 255, 255, 0.42)"
     accent_color = _safe_css_value(
         config.get("Cover", "accent_color", fallback="#8ed7ff"),
         "#8ed7ff",
@@ -440,6 +478,10 @@ def generate_cover(
     css_vars = [
         f"  --cover-overlay: {overlay};",
         f"  --cover-text-color: {text_color};",
+        f"  --cover-outline-color: {outline_color};",
+        f"  --cover-title-shadow: {title_shadow};",
+        f"  --cover-subtitle-shadow: {subtitle_shadow};",
+        f"  --cover-metadata-shadow: {metadata_shadow};",
         f"  --cover-accent-color: {accent_color};",
         f"  --cover-logo-size: {logo_size};",
         f"  --cover-logo-margin: {logo_margin};",
@@ -504,7 +546,8 @@ def generate_cover(
         f'<section id="mindmap-cover" class="mindmap-cover{visible_class}" '
         f'aria-hidden="{aria_hidden}" role="dialog" aria-modal="true" '
         f'aria-labelledby="cover-title" aria-label="演示封面，点击或按回车、空格、方向键进入思维导图" '
-        f'tabindex="0" data-show-on-open="{str(show_on_open).lower()}">'
+        f'tabindex="0" data-show-on-open="{str(show_on_open).lower()}" '
+        f'data-text-preset="{resolved_text_preset}">'
         f'{"".join(logo_html_parts)}'
         '<div class="cover-content">'
         '<div class="cover-heading">'
@@ -625,6 +668,34 @@ def select_boolean(
     raise ValueError("请输入 y/yes/是 或 n/no/否。")
 
 
+def select_cover_text_preset(
+    default: str,
+    input_func: Callable[[str], str] = input,
+) -> str:
+    if default not in COVER_TEXT_PRESETS:
+        raise ValueError("封面字体预设必须是 light 或 dark。")
+    print("封面字体预设:")
+    print("  [1] 浅色字（适合深色背景）")
+    print("  [2] 深色字（适合浅色背景）")
+    default_number = "1" if default == "light" else "2"
+    raw_choice = input_func(f"请选择 (1/2，默认 {default_number}): ").strip().casefold()
+    if not raw_choice:
+        return default
+    choices = {
+        "1": "light",
+        "light": "light",
+        "浅色": "light",
+        "浅色字": "light",
+        "2": "dark",
+        "dark": "dark",
+        "深色": "dark",
+        "深色字": "dark",
+    }
+    if raw_choice not in choices:
+        raise ValueError("字体预设请输入 1/light/浅色 或 2/dark/深色。")
+    return choices[raw_choice]
+
+
 def build_mindmap(
     markdown_path: Path,
     output_dir: Path | None = None,
@@ -632,6 +703,7 @@ def build_mindmap(
     config_path: Path | None = None,
     cover_enabled: bool | None = None,
     show_cover_on_open: bool | None = None,
+    cover_text_preset: str | None = None,
 ) -> Path:
     script_dir = Path(__file__).resolve().parent
     markdown_path = markdown_path.expanduser().resolve()
@@ -672,6 +744,7 @@ def build_mindmap(
         else show_cover_on_open
     )
     resolved_show_cover = resolved_cover_enabled and resolved_show_cover
+    resolved_cover_text_preset = _resolve_cover_text_preset(config, cover_text_preset)
     packager = AssetPackager(output_images_dir, "images/")
     _package_config_assets(config, config_path.parent, packager)
 
@@ -687,6 +760,7 @@ def build_mindmap(
         document_title=title,
         enabled=resolved_cover_enabled,
         show_on_open=resolved_show_cover,
+        text_preset=resolved_cover_text_preset,
     )
     final_html = _render_template(
         template,
@@ -719,6 +793,8 @@ def build_mindmap(
     if resolved_cover_enabled:
         startup_text = "默认显示" if resolved_show_cover else "默认跳过"
         print(f"🎬 封面已生成（{startup_text}，可双击主页键打开）")
+        preset_text = "浅色字" if resolved_cover_text_preset == "light" else "深色字"
+        print(f"🔤 封面字体: {preset_text}预设")
     print(f"📂 输出目录: {output_dir}")
     print(f"   ├── {output_html_path.name}")
     print("   ├── icons/（离线字体）")
@@ -748,7 +824,26 @@ def create_argument_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="打开 HTML 时默认直接显示思维导图",
     )
-    parser.set_defaults(cover_enabled=None, show_cover_on_open=None)
+    text_preset_group = parser.add_mutually_exclusive_group()
+    text_preset_group.add_argument(
+        "--light-cover-text",
+        dest="cover_text_preset",
+        action="store_const",
+        const="light",
+        help="封面使用浅色字体预设，适合深色背景",
+    )
+    text_preset_group.add_argument(
+        "--dark-cover-text",
+        dest="cover_text_preset",
+        action="store_const",
+        const="dark",
+        help="封面使用深色字体预设，适合浅色背景",
+    )
+    parser.set_defaults(
+        cover_enabled=None,
+        show_cover_on_open=None,
+        cover_text_preset=None,
+    )
     return parser
 
 
@@ -774,6 +869,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             else:
                 resolved_show_cover = default_show_cover
+        default_text_preset = _resolve_cover_text_preset(prompt_config)
+        resolved_text_preset = args.cover_text_preset
+        if resolved_cover_enabled and resolved_text_preset is None:
+            if sys.stdin.isatty():
+                resolved_text_preset = select_cover_text_preset(default_text_preset)
+            else:
+                resolved_text_preset = default_text_preset
         build_mindmap(
             markdown_path=markdown_path,
             output_dir=args.output_dir,
@@ -781,6 +883,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             config_path=resolved_config_path,
             cover_enabled=resolved_cover_enabled,
             show_cover_on_open=resolved_show_cover,
+            cover_text_preset=resolved_text_preset,
         )
         return 0
     except KeyboardInterrupt:
