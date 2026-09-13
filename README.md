@@ -20,10 +20,23 @@
 
 - Python 3.10 或更高版本。
 - 支持现代 HTML、CSS 和 JavaScript 的浏览器。
+- 仅使用 Python 标准库，无需安装第三方依赖。
 
 ```bash
 python3 --version
 ```
+
+## 本机部署为静态预览
+
+本项目负责把 Markdown 转换为可独立打开的 HTML，没有常驻后端服务。需要通过浏览器预览或在局域网内提供生成结果时，可以用 Python 标准库启动静态文件服务器。Python 命令均通过项目虚拟环境运行：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python md_to_mindmap.py "测试示例.md" --output-dir "dist/测试示例" --skip-cover-on-open
+.venv/bin/python -m http.server 8000 --bind 127.0.0.1 --directory dist
+```
+
+打开 `http://127.0.0.1:8000/测试示例/测试示例.html` 查看结果。要生成自己的导图，将输入路径换成目标 Markdown 文件，并为 `--output-dir` 指定 `dist/` 下的目录。服务器运行期间终端保持打开；按 `Ctrl+C` 停止。
 
 ## 快速开始
 

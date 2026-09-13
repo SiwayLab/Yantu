@@ -198,7 +198,7 @@ class CommandTests(unittest.TestCase):
         config.read(project_root / "config.conf", encoding="utf-8")
         background = config.get("Cover", "background_image")
 
-        self.assertEqual(background, "assets/cover-default.svg")
+        self.assertEqual(background, "assets/cover-default.png")
         self.assertTrue((project_root / background).is_file())
 
     def test_interactive_choice_rejects_zero_and_negative_numbers(self):
